@@ -121,11 +121,18 @@ async def get_project_file(
         raise HTTPException(status_code=404, detail="Project not found")
 
     safe_filename = os.path.basename(filename)
-    file_path = os.path.join(settings.output_dir, project.folder_name, safe_filename)
+    project_dir = os.path.realpath(
+        os.path.join(settings.output_dir, project.folder_name)
+    )
+    file_path = os.path.realpath(os.path.join(project_dir, safe_filename))
+
+    # Ensure the resolved path stays inside the project directory
+    if not file_path.startswith(project_dir + os.sep):
+        raise HTTPException(status_code=400, detail="Invalid filename")
     if not os.path.isfile(file_path):
         raise HTTPException(status_code=404, detail="File not found")
 
-    with open(file_path, "r", encoding="utf-8") as f:
+    with open(file_path, "r", encoding="utf-8") as f:  # noqa: S603
         content = f.read()
 
     return FileContent(name=safe_filename, content=content, size=len(content))
