@@ -11,7 +11,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.database import async_session
-from backend.models import Project
+from backend.models import Project, ProjectStatus
 from backend.services.writer_service import run_writer
 
 router = APIRouter(tags=["websocket"])
@@ -45,7 +45,7 @@ async def write_ws(websocket: WebSocket, project_id: str):
             return
         prompt = project.prompt
         # Mark project as running
-        project.status = "running"
+        project.status = ProjectStatus.RUNNING
         await db.commit()
 
     # Event callback that pushes JSON through the WebSocket
@@ -72,7 +72,7 @@ async def write_ws(websocket: WebSocket, project_id: str):
                 async with async_session() as db:
                     proj = await db.get(Project, project_id)
                     if proj:
-                        proj.status = "completed"
+                        proj.status = ProjectStatus.COMPLETED
                         proj.progress = 100
                         await db.commit()
 
@@ -80,7 +80,7 @@ async def write_ws(websocket: WebSocket, project_id: str):
                 async with async_session() as db:
                     proj = await db.get(Project, project_id)
                     if proj:
-                        proj.status = "error"
+                        proj.status = ProjectStatus.ERROR
                         proj.error_message = data.get("message", "Unknown error")
                         await db.commit()
 
@@ -98,8 +98,8 @@ async def write_ws(websocket: WebSocket, project_id: str):
     except WebSocketDisconnect:
         async with async_session() as db:
             proj = await db.get(Project, project_id)
-            if proj and proj.status == "running":
-                proj.status = "cancelled"
+            if proj and proj.status == ProjectStatus.RUNNING:
+                proj.status = ProjectStatus.CANCELLED
                 await db.commit()
     except Exception as exc:
         try:
@@ -111,7 +111,7 @@ async def write_ws(websocket: WebSocket, project_id: str):
         async with async_session() as db:
             proj = await db.get(Project, project_id)
             if proj:
-                proj.status = "error"
+                proj.status = ProjectStatus.ERROR
                 proj.error_message = str(exc)
                 await db.commit()
     finally:

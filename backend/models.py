@@ -2,6 +2,7 @@
 SQLAlchemy models for the Gemini Writer application.
 """
 
+import enum
 import uuid
 from datetime import datetime, timezone
 
@@ -13,6 +14,16 @@ from backend.core.database import Base
 
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
+
+
+class ProjectStatus(str, enum.Enum):
+    """Valid statuses for a writing project."""
+
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    ERROR = "error"
+    CANCELLED = "cancelled"
 
 
 class Project(Base):
@@ -27,8 +38,10 @@ class Project(Base):
     folder_name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     prompt: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(
-        String(20), default="pending", nullable=False
-    )  # pending, running, completed, error, cancelled
+        SAEnum(ProjectStatus, values_callable=lambda e: [x.value for x in e]),
+        default=ProjectStatus.PENDING,
+        nullable=False,
+    )
     progress: Mapped[int] = mapped_column(Integer, default=0)
     current_iteration: Mapped[int] = mapped_column(Integer, default=0)
     total_tokens: Mapped[int] = mapped_column(Integer, default=0)

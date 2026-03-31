@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.config import settings
 from backend.core.database import get_db
-from backend.models import Project
+from backend.models import Project, ProjectStatus
 from backend.schemas import (
     ProjectCreate,
     ProjectResponse,
@@ -58,7 +58,7 @@ async def create_project(
         name=body.name,
         folder_name=folder_name,
         prompt=body.prompt,
-        status="pending",
+        status=ProjectStatus.PENDING,
     )
     db.add(project)
     await db.commit()
