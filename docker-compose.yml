@@ -1,0 +1,14 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./data/gemini_writer.db
+      - OUTPUT_DIR=output
+    volumes:
+      - ./data:/app/data
+      - ./output:/app/output
+    restart: unless-stopped

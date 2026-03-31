@@ -1,230 +1,192 @@
-# Gemini Writing Agent
+# Gemini Writer
 
-An autonomous agent powered by **Google's Gemini 3 Flash** model for creating novels, books, and short story collections.
+A modern fullstack AI creative writing agent powered by **Google Gemini 3 Flash**. Create novels, books, and short story collections with an autonomous AI agent — via a sleek web UI **or** the classic CLI.
 
-## Features
+## ✨ Features
 
-- 🤖 **Autonomous Writing**: The agent plans and executes creative writing tasks independently
-- 📚 **Multiple Formats**: Create novels, books, or short story collections
-- ⚡ **Real-Time Streaming**: See the agent's thinking and writing appear as it's generated
-- 💾 **Smart Context Management**: Automatically compresses context when approaching token limits
-- 🔄 **Recovery Mode**: Resume interrupted work from saved context summaries
-- 📊 **Token Monitoring**: Real-time tracking of token usage with automatic optimization
-- 🛠️ **Tool Use**: Agent can create projects, write files, and manage its workspace
-- 🧠 **Advanced Thinking**: Uses Gemini's thinking mode for better reasoning
+- 🤖 **Autonomous Writing** — The agent plans, reasons, and writes independently
+- 🌐 **Modern Web UI** — React + Tailwind CSS dashboard with real-time streaming
+- ⚡ **WebSocket Streaming** — Watch the agent think and write live
+- 📚 **Multiple Formats** — Novels, books, short story collections
+- 💾 **Smart Context Management** — Automatic compression near token limits
+- 🔄 **Recovery Mode** — Resume interrupted work from saved summaries
+- 📊 **Token Monitoring** — Real-time tracking with automatic optimization
+- 🛠️ **Tool Use** — Agent creates projects, writes files, and manages its workspace
+- 🧠 **Advanced Thinking** — Uses Gemini's HIGH thinking mode for better reasoning
+- 🐳 **Docker Ready** — One-command deployment with Docker Compose
+- 🗄️ **SQLite Database** — Project persistence via SQLAlchemy (async)
+- 🧪 **Tested** — Backend API and tool tests with pytest
 
-## Installation
+## 🏗️ Architecture
+
+```
+gemini-writer/
+├── backend/                  # FastAPI backend
+│   ├── main.py               # Application entry point
+│   ├── models.py             # SQLAlchemy models
+│   ├── schemas.py            # Pydantic schemas
+│   ├── core/
+│   │   ├── config.py         # Settings (from env)
+│   │   └── database.py       # Async SQLite engine
+│   ├── api/
+│   │   ├── projects.py       # REST CRUD for projects
+│   │   └── writer_ws.py      # WebSocket streaming endpoint
+│   └── services/
+│       └── writer_service.py # Core agentic loop (shared by CLI & API)
+├── frontend/                 # React + Vite + Tailwind CSS
+│   ├── src/
+│   │   ├── App.jsx
+│   │   ├── components/       # Layout, shared UI
+│   │   ├── hooks/            # useWebSocket
+│   │   └── pages/            # Dashboard, NewProject, ProjectView
+│   ├── package.json
+│   └── vite.config.js
+├── tools/                    # Agent tool implementations
+│   ├── project.py            # Project folder management
+│   ├── writer.py             # Markdown file writing
+│   └── compression.py        # Context compression
+├── tests/                    # pytest test suite
+│   ├── test_api.py           # API endpoint tests
+│   └── test_tools.py         # Tool unit tests
+├── writer.py                 # CLI entry point (still works standalone)
+├── utils.py                  # Shared utilities
+├── pyproject.toml            # Modern Python packaging
+├── requirements.txt          # Python dependencies
+├── Dockerfile                # Multi-stage Docker build
+├── docker-compose.yml        # One-command deployment
+└── env.example               # Example environment config
+```
+
+## 🚀 Quick Start
 
 ### Prerequisites
 
-We recommend using [uv](https://github.com/astral-sh/uv) for fast Python package management:
+- **Python 3.11+**
+- **Node.js 18+** (for the frontend)
+- A [Google Gemini API key](https://aistudio.google.com/app/apikey)
+
+### 1. Install dependencies
 
 ```bash
-# Install uv (if you don't have it)
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
-### Setup
-
-1. Install dependencies:
-
-**Using uv (recommended):**
-```bash
-uv pip install -r requirements.txt
-```
-
-**Or using pip:**
-```bash
+# Backend
 pip install -r requirements.txt
+
+# Frontend
+cd frontend && npm install && cd ..
 ```
 
-2. Configure your API key:
+### 2. Configure environment
 
-Create a `.env` file with your API key:
 ```bash
-# Copy the example file
 cp env.example .env
-
-# Edit .env and add your API key
-# The file should contain:
-GEMINI_API_KEY=your-api-key-here
+# Edit .env and add your GEMINI_API_KEY
 ```
 
-Get your Gemini API key from: https://aistudio.google.com/app/apikey
+### 3a. Run the Web App (fullstack)
 
-## Usage
-
-### Fresh Start
-
-Run with an inline prompt:
 ```bash
-# Using uv (recommended)
-uv run writer.py "Create a collection of 5 sci-fi short stories about AI"
+# Terminal 1 – Backend
+uvicorn backend.main:app --reload
 
-# Or using python directly
+# Terminal 2 – Frontend
+cd frontend && npm run dev
+```
+
+Open **http://localhost:5173** in your browser.
+
+### 3b. Run the CLI (classic mode)
+
+```bash
 python writer.py "Create a collection of 5 sci-fi short stories about AI"
+
+# Or interactively:
+python writer.py
 ```
 
-Or run interactively:
+### 🐳 Docker
+
 ```bash
-uv run writer.py
-# or: python writer.py
+docker compose up --build
+# → App available at http://localhost:8000
 ```
-Then enter your prompt when asked.
 
-### Recovery Mode
+## 🌐 Web UI
 
-If the agent is interrupted or you want to continue previous work:
+| Page | Description |
+|------|-------------|
+| **Dashboard** | List all projects, see status & progress, delete projects |
+| **New Project** | Create a project with name + prompt, or use quick templates |
+| **Project View** | Real-time agent feed (thinking, content, tool calls), file browser with Markdown preview |
+
+## 🔌 API Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/health` | Health check |
+| `GET` | `/api/projects` | List projects |
+| `POST` | `/api/projects` | Create a project |
+| `GET` | `/api/projects/:id` | Get project details |
+| `DELETE` | `/api/projects/:id` | Delete a project |
+| `GET` | `/api/projects/:id/files` | List project files |
+| `GET` | `/api/projects/:id/files/:name` | Read a file |
+| `WS` | `/ws/write/:id` | Start writing (WebSocket stream) |
+
+## 🧪 Testing
+
 ```bash
-uv run writer.py --recover output/my_project/.context_summary_20250107_143022.md
-# or: python writer.py --recover output/my_project/.context_summary_20250107_143022.md
+# Run all tests
+pytest
+
+# Run with verbose output
+pytest -v
 ```
 
-## How It Works
+## ⚙️ Configuration
 
-### The Agent's Tools
+All settings can be overridden via environment variables (see `env.example`):
 
-The agent has access to three tools:
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `GEMINI_API_KEY` | *(required)* | Your Google Gemini API key |
+| `MODEL_NAME` | `gemini-3-flash-preview` | Gemini model to use |
+| `MAX_ITERATIONS` | `300` | Maximum agent iterations |
+| `TOKEN_LIMIT` | `1000000` | Context window size |
+| `COMPRESSION_THRESHOLD` | `900000` | Auto-compress at this token count |
+| `DATABASE_URL` | `sqlite+aiosqlite:///./gemini_writer.db` | Database connection string |
+| `CORS_ORIGINS` | `http://localhost:5173,http://localhost:3000` | Allowed CORS origins |
 
-1. **create_project**: Creates a project folder to organize the writing
-2. **write_file**: Writes markdown files with three modes:
-   - `create`: Creates a new file (fails if exists)
-   - `append`: Adds content to an existing file
-   - `overwrite`: Replaces the entire file content
-3. **compress_context**: Automatically triggered to manage context size
+## 📖 How It Works
 
 ### The Agentic Loop
 
-1. The agent receives your prompt
-2. It reasons about the task using Gemini's thinking mode
-3. It decides which tools to call and executes them
-4. It reviews the results and continues until the task is complete
-5. Maximum 300 iterations with automatic context compression
-
-### Context Management
-
-- **Token Limit**: 1,000,000 tokens (Gemini's large context window)
-- **Auto-Compression**: Triggers at 900,000 tokens (90% of limit)
-- **Backups**: Automatic context summaries every 50 iterations
-- **Recovery**: All summaries saved with timestamps for resumption
-
-## Project Structure
-
-```
-kimi-writer/
-├── writer.py        # Main agent
-├── tools/
-│   ├── __init__.py       # Tool registry
-│   ├── writer.py         # File writing tool
-│   ├── project.py        # Project management tool
-│   └── compression.py    # Context compression tool
-├── utils.py              # Utilities (token counting, etc.)
-├── requirements.txt      # Python dependencies
-├── env.example           # Example configuration
-├── .gitignore            # Git ignore rules
-└── README.md             # This file
-
-# Generated during use:
-output/                   # All AI-generated projects go here
-├── your_project_name/    # Created by the agent
-│   ├── chapter_01.md     # Written by the agent
-│   ├── chapter_02.md
-│   └── .context_summary_*.md  # Auto-saved context summaries
-└── another_project/
-    └── ...
-```
-
-## Examples
-
-### Example 1: Novel
-```bash
-uv run writer.py "Write a mystery novel set in Victorian London with 10 chapters"
-```
-
-### Example 2: Short Story Collection
-```bash
-uv run writer.py "Create 7 interconnected sci-fi short stories exploring the theme of memory"
-```
-
-### Example 3: Book
-```bash
-uv run writer.py "Write a comprehensive guide to Python programming with 15 chapters"
-```
-
-## Advanced Features
+1. User submits a writing prompt (via web UI or CLI)
+2. The agent receives the prompt and reasons using Gemini's HIGH thinking mode
+3. It decides which tools to call (`create_project`, `write_file`, `compress_context`)
+4. Tool results feed back into the conversation
+5. The loop continues until the task is complete (up to 300 iterations)
+6. Context is automatically compressed when approaching the 1M token limit
 
 ### Real-Time Streaming
-Watch the agent think and write in real-time:
-- 🧠 **Thinking Stream**: See the agent's thought process as it plans (Gemini's thinking mode)
-- 💬 **Content Stream**: Watch stories being written character by character
-- 🔧 **Tool Call Progress**: Live updates when generating large content
-- ⚡ **No Waiting**: Immediate feedback - no more staring at a blank screen
 
-### Iteration Counter
-The agent displays its progress: `Iteration X/300`
+The WebSocket endpoint (`/ws/write/:id`) pushes JSON events as the agent works:
 
-### Token Monitoring
-Real-time token usage: `Current tokens: 45,234/1,000,000 (4.5%)`
-
-### Graceful Interruption
-Press `Ctrl+C` to interrupt. The agent will save the current context for recovery.
-
-## Tips for Best Results
-
-1. **Be Specific**: Clear prompts get better results
-   - Good: "Create a 5-chapter romance novel set in modern Tokyo"
-   - Less good: "Write something interesting"
-
-2. **Let It Work**: The agent works autonomously - it will plan and execute the full task
-
-3. **Recovery is Easy**: If interrupted, just use the `--recover` flag with the latest context summary
-
-4. **Check Progress**: Generated files appear in real-time in the project folder
-
-## Troubleshooting
-
-### "GEMINI_API_KEY environment variable not set"
-Make sure you have created a `.env` file in the project root with your API key:
-```bash
-GEMINI_API_KEY=your-actual-api-key-here
+```json
+{"type": "thinking",    "data": {"text": "...", "iteration": 1}}
+{"type": "content",     "data": {"text": "...", "iteration": 1}}
+{"type": "tool_call",   "data": {"name": "write_file", "args": {...}}}
+{"type": "tool_result", "data": {"name": "write_file", "result": "..."}}
+{"type": "progress",    "data": {"iteration": 1, "tokens": 1234, ...}}
+{"type": "done",        "data": {"message": "Completed in 42 iterations."}}
 ```
 
-### "401 Unauthorized" or Authentication errors
-- Verify your API key is correct in the `.env` file
-- Get your API key from: https://aistudio.google.com/app/apikey
+## 📄 License
 
-### "Error creating project folder"
-Check write permissions in the current directory
-
-### Agent seems stuck
-The agent can run up to 300 iterations. For very complex tasks, this is normal. Check the project folder to see progress.
-
-### Token limit issues
-The agent automatically compresses context at 900K tokens. If you see compression messages, the system is working correctly.
-
-## Technical Details
-
-- **Model**: gemini-3-flash-preview
-- **Thinking Level**: HIGH (for better reasoning)
-- **Temperature**: 1.0
-- **Context Window**: 1,000,000 tokens
-- **Max Iterations**: 300
-- **Compression Threshold**: 900,000 tokens
-
-You can customize these settings in `writer.py`.
-
-## License
-
-MIT License with Attribution Requirement - see [LICENSE](LICENSE) file for details.
+MIT License with Attribution Requirement — see [LICENSE](LICENSE) file.
 
 **Commercial Use**: If you use this software in a commercial product, you must provide clear attribution to Pietro Schirano (@Doriandarko).
 
-**API Usage**: This project uses the Google Gemini API. Please refer to Google's terms of service for API usage guidelines.
-
-## Credits
+## 🙏 Credits
 
 - **Created by**: Pietro Schirano ([@Doriandarko](https://github.com/Doriandarko))
-- **Powered by**: Google's Gemini 3 Flash model
+- **Powered by**: Google Gemini 3 Flash
 - **Repository**: https://github.com/Doriandarko/gemini-writer
-
-

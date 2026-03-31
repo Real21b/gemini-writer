@@ -11,6 +11,8 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.egg-info/
+dist/
 
 # Virtual environments
 venv/
@@ -30,6 +32,10 @@ virtualenv/
 # Generated content (AI-created projects)
 output/
 
+# Database
+*.db
+data/
+
 # OS
 .DS_Store
 Thumbs.db
@@ -41,4 +47,9 @@ Thumbs.db
 
 # Temporary files
 .context_summary_*.md
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
 
