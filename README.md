@@ -13,6 +13,12 @@ An autonomous agent powered by **Google's Gemini 3 Flash** model for creating no
 - 🛠️ **Tool Use**: Agent can create projects, write files, and manage its workspace
 - 🧠 **Advanced Thinking**: Uses Gemini's thinking mode for better reasoning
 
+## Development Guide
+
+A layered development guide (in Turkish) covering the current code audit, target
+fullstack architecture, phased roadmap, API contract and UX design lives in
+[`docs/`](docs/00-genel-bakis.md).
+
 ## Installation
 
 ### Prerequisites
