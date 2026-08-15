@@ -1,7 +1,12 @@
 # 1. Mevcut Durum Analizi
 
-Bu bölüm kodun bugünkü halinin haritasını ve tespit edilen sorunları içerir. Her bulgu
-`dosya:satır` referanslıdır; doğrudan iş kalemi olarak kullanılabilir.
+Bu bölüm kodun haritasını ve tespit edilen sorunları içerir. Her bulgu `dosya:satır`
+referanslıdır; doğrudan iş kalemi olarak kullanılabilir.
+
+> **Not:** Bu analiz Faz 0 çalışması **öncesindeki** kodu anlatır ve bulguların kaynak
+> kaydı olarak korunmuştur. **B-01, B-02, B-06, B-07, B-09, B-10, B-14 kapatıldı** —
+> ne yapıldığı [FAZ-0-TAMAMLANDI.md](FAZ-0-TAMAMLANDI.md) içinde. Kalan bulgular
+> (B-03, B-04, B-05, B-08, B-11, B-12, B-13) Faz 1'de kapanacak.
 
 ---
 

@@ -2,20 +2,160 @@
 Utility functions for the Gemini Writing Agent.
 """
 
-from typing import List, Dict, Any, Callable
+import random
+import time
+from typing import List, Dict, Any, Callable, Optional
 from google import genai
 from google.genai import types
+
+
+# --- Error handling ---------------------------------------------------------
+
+# Substrings that indicate a request will never succeed on retry.
+_PERMANENT_MARKERS = (
+    "api key not valid",
+    "api_key_invalid",
+    "invalid api key",
+    "unauthorized",
+    "permission denied",
+    "permission_denied",
+    "unauthenticated",
+    "invalid_argument",
+    "not found",
+    "400",
+    "401",
+    "403",
+    "404",
+)
+
+# Substrings that indicate a transient failure worth retrying.
+_TRANSIENT_MARKERS = (
+    "429",
+    "500",
+    "502",
+    "503",
+    "504",
+    "resource_exhausted",
+    "rate limit",
+    "quota",
+    "unavailable",
+    "deadline",
+    "timeout",
+    "timed out",
+    "connection",
+    "temporarily",
+    "internal error",
+    "overloaded",
+)
+
+
+class PermanentAPIError(Exception):
+    """Raised when an API call fails in a way that retrying cannot fix."""
+
+
+def classify_error(exc: BaseException) -> str:
+    """
+    Classify an exception as 'permanent' or 'transient'.
+
+    Unknown errors are treated as transient so a single odd failure does not
+    end a long writing run; the caller still enforces an attempt limit.
+    """
+    message = f"{type(exc).__name__}: {exc}".lower()
+
+    for marker in _TRANSIENT_MARKERS:
+        if marker in message:
+            return "transient"
+    for marker in _PERMANENT_MARKERS:
+        if marker in message:
+            return "permanent"
+    return "transient"
+
+
+def call_with_retry(
+    func: Callable[[], Any],
+    *,
+    max_attempts: int = 5,
+    base_delay: float = 2.0,
+    max_delay: float = 60.0,
+    on_retry: Optional[Callable[[int, float, BaseException], None]] = None,
+    sleep: Optional[Callable[[float], None]] = None,
+) -> Any:
+    """
+    Call ``func`` with exponential backoff and jitter.
+
+    Permanent errors (bad API key, malformed request) are raised immediately as
+    ``PermanentAPIError`` so the caller can stop instead of burning iterations.
+
+    Args:
+        func: Zero-argument callable performing the API request
+        max_attempts: Total attempts including the first one
+        base_delay: Delay before the first retry, in seconds
+        max_delay: Upper bound for a single delay
+        on_retry: Called as (attempt, delay, error) before each sleep
+        sleep: Injectable sleep function; defaults to time.sleep
+
+    Returns:
+        Whatever ``func`` returns
+
+    Raises:
+        PermanentAPIError: The request cannot succeed on retry
+        Exception: The last transient error, once attempts are exhausted
+    """
+    last_error: Optional[BaseException] = None
+    sleep_fn = sleep if sleep is not None else time.sleep
+
+    for attempt in range(1, max_attempts + 1):
+        try:
+            return func()
+        except KeyboardInterrupt:
+            raise
+        except Exception as exc:  # noqa: BLE001 - classified below
+            last_error = exc
+            if classify_error(exc) == "permanent":
+                raise PermanentAPIError(str(exc)) from exc
+            if attempt == max_attempts:
+                break
+            delay = min(max_delay, base_delay * (2 ** (attempt - 1)))
+            delay *= 0.5 + random.random() / 2  # jitter: 50-100% of the delay
+            if on_retry:
+                on_retry(attempt, delay, exc)
+            sleep_fn(delay)
+
+    assert last_error is not None
+    raise last_error
+
+
+def extract_usage(response: Any) -> Dict[str, int]:
+    """
+    Read token usage from a Gemini response.
+
+    Using the usage metadata that already ships with the response avoids an
+    extra ``count_tokens`` round-trip on every iteration.
+    """
+    usage = getattr(response, "usage_metadata", None)
+    if usage is None:
+        return {"prompt": 0, "output": 0, "thinking": 0, "total": 0}
+
+    def _int(value: Any) -> int:
+        return int(value) if isinstance(value, (int, float)) else 0
+
+    prompt = _int(getattr(usage, "prompt_token_count", 0))
+    output = _int(getattr(usage, "candidates_token_count", 0))
+    thinking = _int(getattr(usage, "thoughts_token_count", 0))
+    total = _int(getattr(usage, "total_token_count", 0)) or (prompt + output + thinking)
+
+    return {"prompt": prompt, "output": output, "thinking": thinking, "total": total}
 
 
 def estimate_token_count(client: genai.Client, model: str, contents: List[types.Content]) -> int:
     """
     Estimate the token count for the given contents using the Gemini API.
-    
+
     Args:
         client: The Gemini client instance
         model: The model name
         contents: List of Content objects
-        
+
     Returns:
         Total token count
     """
@@ -25,7 +165,7 @@ def estimate_token_count(client: genai.Client, model: str, contents: List[types.
             contents=contents
         )
         return response.total_tokens
-    except Exception as e:
+    except Exception:
         # Fallback: rough estimate based on character count
         total_chars = 0
         for content in contents:
@@ -39,7 +179,7 @@ def estimate_token_count(client: genai.Client, model: str, contents: List[types.
 def get_tool_definitions() -> types.Tool:
     """
     Returns the tool definitions in the format expected by Gemini.
-    
+
     Returns:
         Tool object containing all function declarations
     """
@@ -98,12 +238,12 @@ def get_tool_definitions() -> types.Tool:
 def get_tool_map() -> Dict[str, Callable]:
     """
     Returns a mapping of tool names to their implementation functions.
-    
+
     Returns:
         Dictionary mapping tool name strings to callable functions
     """
     from tools import write_file_impl, create_project_impl, compress_context_impl
-    
+
     return {
         "create_project": create_project_impl,
         "write_file": write_file_impl,
@@ -114,7 +254,7 @@ def get_tool_map() -> Dict[str, Callable]:
 def get_system_prompt() -> str:
     """
     Returns the system prompt for the writing agent.
-    
+
     Returns:
         System prompt string
     """

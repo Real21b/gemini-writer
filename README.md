@@ -6,12 +6,16 @@ An autonomous agent powered by **Google's Gemini 3 Flash** model for creating no
 
 - 🤖 **Autonomous Writing**: The agent plans and executes creative writing tasks independently
 - 📚 **Multiple Formats**: Create novels, books, or short story collections
-- ⚡ **Real-Time Streaming**: See the agent's thinking and writing appear as it's generated
 - 💾 **Smart Context Management**: Automatically compresses context when approaching token limits
 - 🔄 **Recovery Mode**: Resume interrupted work from saved context summaries
-- 📊 **Token Monitoring**: Real-time tracking of token usage with automatic optimization
+- 📊 **Token Monitoring**: Per-iteration token usage read straight from the API response
 - 🛠️ **Tool Use**: Agent can create projects, write files, and manage its workspace
 - 🧠 **Advanced Thinking**: Uses Gemini's thinking mode for better reasoning
+- 🔁 **Resilient**: Transient API errors are retried with exponential backoff; permanent ones stop the run cleanly
+
+> **Not yet implemented:** token-by-token streaming of the model output. Each iteration is
+> printed once the model responds. Live streaming is planned for phase 1 of the
+> [development guide](docs/03-yol-haritasi.md).
 
 ## Development Guide
 
@@ -117,14 +121,18 @@ The agent has access to three tools:
 ## Project Structure
 
 ```
-kimi-writer/
-├── writer.py        # Main agent
+gemini-writer/
+├── writer.py             # Main agent loop (CLI entry point)
 ├── tools/
 │   ├── __init__.py       # Tool registry
 │   ├── writer.py         # File writing tool
+│   ├── paths.py          # Path safety (keeps writes inside the project folder)
 │   ├── project.py        # Project management tool
-│   └── compression.py    # Context compression tool
-├── utils.py              # Utilities (token counting, etc.)
+│   └── compression.py    # Context snapshots and compression
+├── utils.py              # Token counting, retry/backoff, tool schemas, system prompt
+├── tests/                # Test suite (no API key required)
+├── docs/                 # Development guide and roadmap
+├── pyproject.toml        # Dependencies, lint and test configuration
 ├── requirements.txt      # Python dependencies
 ├── env.example           # Example configuration
 ├── .gitignore            # Git ignore rules
@@ -159,18 +167,24 @@ uv run writer.py "Write a comprehensive guide to Python programming with 15 chap
 
 ## Advanced Features
 
-### Real-Time Streaming
-Watch the agent think and write in real-time:
-- 🧠 **Thinking Stream**: See the agent's thought process as it plans (Gemini's thinking mode)
-- 💬 **Content Stream**: Watch stories being written character by character
-- 🔧 **Tool Call Progress**: Live updates when generating large content
-- ⚡ **No Waiting**: Immediate feedback - no more staring at a blank screen
+### Visible Reasoning
+After each iteration the agent prints:
+- 🧠 **Thinking**: the model's reasoning for that step (Gemini's thinking mode)
+- 💬 **Response**: any prose the model addressed to you
+- 🔧 **Tool Calls**: which tools ran, with their arguments and results
 
 ### Iteration Counter
 The agent displays its progress: `Iteration X/300`
 
 ### Token Monitoring
-Real-time token usage: `Current tokens: 45,234/1,000,000 (4.5%)`
+Token usage after every call: `Current tokens: 45,234/1,000,000 (4.5%)`
+The count comes from the API response itself, so tracking costs no extra requests.
+
+### Error Handling
+Transient failures (429, 503, timeouts) are retried up to 5 times with exponential
+backoff and jitter. Permanent failures (invalid API key, malformed request) stop the run
+immediately and save a recovery snapshot. After 5 consecutive failed iterations the run
+stops instead of burning through the iteration budget.
 
 ### Graceful Interruption
 Press `Ctrl+C` to interrupt. The agent will save the current context for recovery.
@@ -216,8 +230,24 @@ The agent automatically compresses context at 900K tokens. If you see compressio
 - **Context Window**: 1,000,000 tokens
 - **Max Iterations**: 300
 - **Compression Threshold**: 900,000 tokens
+- **Write Sandbox**: the agent can only write `.md`, `.txt`, `.json` and `.yaml` files
+  inside the active project folder (max 5 MB per file, 5 directory levels deep)
 
 You can customize these settings in `writer.py`.
+
+## Development
+
+```bash
+# Install with dev dependencies
+uv pip install -e ".[dev]"
+
+# Lint and test (no API key needed - the suite uses a fake client)
+ruff check .
+pytest
+```
+
+The full development guide, code audit and fullstack roadmap live in
+[`docs/`](docs/00-genel-bakis.md).
 
 ## License
 

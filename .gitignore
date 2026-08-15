@@ -12,6 +12,18 @@ __pycache__/
 *.pyo
 *.pyd
 
+# Test and lint artifacts
+.pytest_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Build artifacts
+*.egg-info/
+build/
+dist/
+
 # Virtual environments
 venv/
 .venv/

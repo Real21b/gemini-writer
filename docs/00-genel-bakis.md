@@ -18,6 +18,10 @@ Rehber bilinçli olarak **aşamalı (incremental)** kurgulanmıştır: her faz t
 | 4 | [04-api-ve-veri-modeli.md](04-api-ve-veri-modeli.md) | REST + SSE sözleşmesi, veritabanı şeması, durum makinesi |
 | 5 | [05-frontend-ux.md](05-frontend-ux.md) | Arayüz mimarisi, ekran ekran UX tasarımı, etkileşim kuralları |
 | 6 | [06-kalite-guvenlik-operasyon.md](06-kalite-guvenlik-operasyon.md) | Test stratejisi, güvenlik, maliyet kontrolü, dağıtım, gözlemlenebilirlik |
+| ✅ | [FAZ-0-TAMAMLANDI.md](FAZ-0-TAMAMLANDI.md) | Faz 0 uygulama raporu: ne yapıldı, hangi bulgu kapandı, kriterler nasıl doğrulandı |
+
+> **Güncel durum:** Faz 0 tamamlandı (88 test, %85 kapsam, CI kurulu). Sıradaki adım Faz 1 —
+> `core/` paketi, `Workspace`, okuma araçları ve akış.
 
 ## Bir bakışta durum
 

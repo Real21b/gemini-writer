@@ -15,10 +15,13 @@ geliştiricinin yarı zamanlı (haftada ~15 saat) çalışması varsayımıyla v
 
 ---
 
-## Faz 0 — Stabilizasyon (3-5 gün)
+## Faz 0 — Stabilizasyon ✅ TAMAMLANDI
 
 **Amaç:** Mimariye dokunmadan, bugün acı veren hataları kapatmak. Yeniden yapılandırma
 sırasında "bu davranış eskiden doğru muydu?" sorusunu ortadan kaldırır.
+
+> **Durum:** Tamamlandı. Uygulama notları ve kabul kriterlerinin doğrulaması:
+> [FAZ-0-TAMAMLANDI.md](FAZ-0-TAMAMLANDI.md). 88 test, %85 kapsam, lint temiz.
 
 ### İşler
 
