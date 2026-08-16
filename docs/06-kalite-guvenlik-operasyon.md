@@ -175,3 +175,6 @@ Rehber uygulanırken kapanacak borçların özeti (detay
 | B-11 | Gömülü yapılandırma | 1 |
 | B-12 | `utils.py` sorumluluk karmaşası | 1 |
 | B-13 | `append` sessiz dosya oluşturma | 1 |
+
+> Tablodaki borçların tamamı kapatıldı: Faz 0 ([rapor](FAZ-0-TAMAMLANDI.md)) ve
+> Faz 1 ([rapor](FAZ-1-TAMAMLANDI.md)).

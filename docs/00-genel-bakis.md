@@ -18,27 +18,28 @@ Rehber bilinçli olarak **aşamalı (incremental)** kurgulanmıştır: her faz t
 | 4 | [04-api-ve-veri-modeli.md](04-api-ve-veri-modeli.md) | REST + SSE sözleşmesi, veritabanı şeması, durum makinesi |
 | 5 | [05-frontend-ux.md](05-frontend-ux.md) | Arayüz mimarisi, ekran ekran UX tasarımı, etkileşim kuralları |
 | 6 | [06-kalite-guvenlik-operasyon.md](06-kalite-guvenlik-operasyon.md) | Test stratejisi, güvenlik, maliyet kontrolü, dağıtım, gözlemlenebilirlik |
-| ✅ | [FAZ-0-TAMAMLANDI.md](FAZ-0-TAMAMLANDI.md) | Faz 0 uygulama raporu: ne yapıldı, hangi bulgu kapandı, kriterler nasıl doğrulandı |
+| ✅ | [FAZ-0-TAMAMLANDI.md](FAZ-0-TAMAMLANDI.md) | Faz 0 uygulama raporu: stabilizasyon |
+| ✅ | [FAZ-1-TAMAMLANDI.md](FAZ-1-TAMAMLANDI.md) | Faz 1 uygulama raporu: çekirdek, workspace, hafıza, akış |
 
-> **Güncel durum:** Faz 0 tamamlandı (88 test, %85 kapsam, CI kurulu). Sıradaki adım Faz 1 —
-> `core/` paketi, `Workspace`, okuma araçları ve akış.
+> **Güncel durum:** Faz 0 ve Faz 1 tamamlandı (144 test, %93 kapsam, CI kurulu).
+> Sıradaki adım Faz 2 — FastAPI + SSE.
 
 ## Bir bakışta durum
 
-**Bugün ne var:** `writer.py` içinde 470 satırlık bir ajan döngüsü, 3 araç
-(`create_project`, `write_file`, `compress_context`), Gemini 3 Flash ile "düşünme"
-modu, terminal çıktısı. Çalışan ve gerçekten iş gören bir prototip.
+**Başlangıç noktası:** `writer.py` içinde 470 satırlık tek parça bir ajan döngüsü, 3 araç
+(`create_project`, `write_file`, `compress_context`), global proje klasörü, çalışmayan
+kurtarma, okuma yeteneği olmayan bir ajan.
 
-**Ne eksik:**
+**Bugün (Faz 0 + Faz 1 sonrası):**
 
-1. **Doğruluk:** Yedekleme/kurtarma yolu hiç çalışmıyor (bkz. B-01). Ctrl+C'de bağlam
-   kaydedildiği söyleniyor ama dosya yazılmıyor.
-2. **Ajan yeteneği:** Ajan yazdığı dosyaları **okuyamıyor**. 15 bölümlük bir romanda
-   süreklilik (karakter, olay örgüsü) tutmak matematiksel olarak mümkün değil.
-3. **Sunucuya taşınabilirlik:** Aktif proje klasörü **global değişkende** tutuluyor;
-   iki kullanıcı aynı anda çalışırsa birbirinin dosyasına yazar.
-4. **Deneyim:** Terminalde akan log; ilerleme, maliyet, müdahale, düzenleme, dışa
-   aktarma yok.
+- `core/` — arayüzden bağımsız ajan çekirdeği: `Workspace`, olay akışı, bağlam yöneticisi,
+  Gemini sarmalayıcı, Pydantic tabanlı araç kaydı
+- `cli/` — argüman ayrıştırma + olay akışını basan terminal renderer
+- 9 araç: dosya yazma/okuma/listeleme/yamalama, hikâye kutsal kitabı, `finish_task`, `ask_user`
+- Gerçek akış (streaming), tur sınırında sıkıştırma, çalışan kurtarma anlık görüntüleri
+- 144 test, %93 kapsam, API anahtarı gerektirmeyen sahte LLM ile
+
+**Sırada:** Faz 2 — çekirdeği FastAPI + SSE ile HTTP'ye açmak.
 
 ## Rehberi nasıl kullanmalı
 

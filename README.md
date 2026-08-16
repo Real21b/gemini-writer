@@ -8,14 +8,14 @@ An autonomous agent powered by **Google's Gemini 3 Flash** model for creating no
 - 📚 **Multiple Formats**: Create novels, books, or short story collections
 - 💾 **Smart Context Management**: Automatically compresses context when approaching token limits
 - 🔄 **Recovery Mode**: Resume interrupted work from saved context summaries
-- 📊 **Token Monitoring**: Per-iteration token usage read straight from the API response
+- ⚡ **Real-Time Streaming**: thinking and prose appear as the model produces them
+- 🧠 **Long-Term Memory**: a story bible plus read-back tools keep a 100k-word manuscript consistent
+- 📊 **Token Monitoring**: per-iteration token usage read straight from the API response
 - 🛠️ **Tool Use**: Agent can create projects, write files, and manage its workspace
 - 🧠 **Advanced Thinking**: Uses Gemini's thinking mode for better reasoning
 - 🔁 **Resilient**: Transient API errors are retried with exponential backoff; permanent ones stop the run cleanly
 
-> **Not yet implemented:** token-by-token streaming of the model output. Each iteration is
-> printed once the model responds. Live streaming is planned for phase 1 of the
-> [development guide](docs/03-yol-haritasi.md).
+> Streaming is on by default; pass `--no-stream` to print each turn only once it is complete.
 
 ## Development Guide
 
@@ -94,42 +94,53 @@ uv run writer.py --recover output/my_project/.context_summary_20250107_143022.md
 
 ### The Agent's Tools
 
-The agent has access to three tools:
-
-1. **create_project**: Creates a project folder to organize the writing
-2. **write_file**: Writes markdown files with three modes:
-   - `create`: Creates a new file (fails if exists)
-   - `append`: Adds content to an existing file
-   - `overwrite`: Replaces the entire file content
-3. **compress_context**: Automatically triggered to manage context size
+| Tool | What it does |
+|------|--------------|
+| `create_project` | Creates the project folder (always called first) |
+| `write_file` | Writes a file — modes `create`, `append`, `overwrite` |
+| `read_file` | Reads back what was already written (optionally just the tail) |
+| `list_files` | Lists every file with its word count |
+| `apply_patch` | Replaces one exact passage — cheaper than rewriting a chapter |
+| `read_story_bible` / `update_story_bible` | The agent's long-term memory: characters, places, timeline |
+| `finish_task` | The only way to end a run |
+| `ask_user` | Pauses the run when a decision truly needs you |
 
 ### The Agentic Loop
 
 1. The agent receives your prompt
-2. It reasons about the task using Gemini's thinking mode
-3. It decides which tools to call and executes them
-4. It reviews the results and continues until the task is complete
-5. Maximum 300 iterations with automatic context compression
+2. It plans the structure into `00_plan.md` and seeds `story_bible.md`
+3. For each chapter it re-reads the bible, checks how the previous chapter ended,
+   writes the chapter in full, then records the new facts
+4. It continues until every planned piece exists, then calls `finish_task`
+5. A turn that returns text without a tool call does **not** end the run — the agent is
+   nudged to continue, and after repeated silence the run pauses for your input
 
 ### Context Management
 
-- **Token Limit**: 1,000,000 tokens (Gemini's large context window)
-- **Auto-Compression**: Triggers at 900,000 tokens (90% of limit)
-- **Backups**: Automatic context summaries every 50 iterations
-- **Recovery**: All summaries saved with timestamps for resumption
+- **Token Limit**: 1,000,000 tokens (Gemini's context window)
+- **Auto-Compression**: triggers at 65% of the limit — older turns are summarized while
+  recent turns stay intact, and the cut always lands on a turn boundary so a tool call is
+  never separated from its result
+- **Durable core**: after every compression the context still carries the original request,
+  the story bible and the list of files on disk
+- **Backups**: recovery snapshots every 25 iterations, on Ctrl+C, and on failure
+- **Recovery**: `--recover <snapshot>` resumes the work
 
 ## Project Structure
 
 ```
 gemini-writer/
-├── writer.py             # Main agent loop (CLI entry point)
-├── tools/
-│   ├── __init__.py       # Tool registry
-│   ├── writer.py         # File writing tool
-│   ├── paths.py          # Path safety (keeps writes inside the project folder)
-│   ├── project.py        # Project management tool
-│   └── compression.py    # Context snapshots and compression
-├── utils.py              # Token counting, retry/backoff, tool schemas, system prompt
+├── writer.py             # Entry point
+├── core/                 # The agent — no CLI, no HTTP, no globals
+│   ├── config.py         # Settings (env) + RunConfig (per run)
+│   ├── events.py         # The event stream every interface consumes
+│   ├── workspace.py      # The only code that touches the filesystem
+│   ├── llm.py            # Gemini wrapper: streaming, retries, usage
+│   ├── context.py        # Compression, turn boundaries, snapshots
+│   ├── runner.py         # The agent loop (yields events, never prints)
+│   ├── prompts.py        # System and summarization prompts
+│   └── tools/            # Tool registry; schemas derived from Pydantic models
+├── cli/                  # Thin client: argument parsing + console renderer
 ├── tests/                # Test suite (no API key required)
 ├── docs/                 # Development guide and roadmap
 ├── pyproject.toml        # Dependencies, lint and test configuration
@@ -168,17 +179,25 @@ uv run writer.py "Write a comprehensive guide to Python programming with 15 chap
 ## Advanced Features
 
 ### Visible Reasoning
-After each iteration the agent prints:
-- 🧠 **Thinking**: the model's reasoning for that step (Gemini's thinking mode)
-- 💬 **Response**: any prose the model addressed to you
+The agent streams as it works:
+- 🧠 **Thinking**: the model's reasoning, token by token (Gemini's thinking mode)
+- 💬 **Response**: prose as it is written
 - 🔧 **Tool Calls**: which tools ran, with their arguments and results
+- 📄 **Files**: every file as it lands, with its word count
 
 ### Iteration Counter
 The agent displays its progress: `Iteration X/300`
 
 ### Token Monitoring
-Token usage after every call: `Current tokens: 45,234/1,000,000 (4.5%)`
-The count comes from the API response itself, so tracking costs no extra requests.
+Token usage after every call, shown with `--verbose`. The count comes from the API response
+itself, so tracking costs no extra requests.
+
+### Useful Flags
+`--model`, `--max-iterations`, `--temperature`, `--thinking {LOW,MEDIUM,HIGH}`,
+`--output-dir`, `--no-stream`, `--verbose`.
+
+Exit codes: `0` completed (or interrupted with a snapshot saved), `1` failed,
+`2` the agent needs your input.
 
 ### Error Handling
 Transient failures (429, 503, timeouts) are retried up to 5 times with exponential
@@ -229,7 +248,7 @@ The agent automatically compresses context at 900K tokens. If you see compressio
 - **Temperature**: 1.0
 - **Context Window**: 1,000,000 tokens
 - **Max Iterations**: 300
-- **Compression Threshold**: 900,000 tokens
+- **Compression Threshold**: 65% of the token limit
 - **Write Sandbox**: the agent can only write `.md`, `.txt`, `.json` and `.yaml` files
   inside the active project folder (max 5 MB per file, 5 directory levels deep)
 

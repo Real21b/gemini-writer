@@ -5,8 +5,8 @@ geliştiricinin yarı zamanlı (haftada ~15 saat) çalışması varsayımıyla v
 
 | Faz | Ad | Süre | Faz sonunda elinizde ne var |
 |---|---|---|---|
-| 0 | Stabilizasyon | 3-5 gün | Yalan söylemeyen, kurtarması gerçekten çalışan CLI |
-| 1 | Çekirdek yeniden yapılandırma | 1.5-2 hafta | Sunucuya taşınabilir, hafızalı, akış yapan ajan |
+| 0 ✅ | Stabilizasyon | 3-5 gün | Yalan söylemeyen, kurtarması gerçekten çalışan CLI |
+| 1 ✅ | Çekirdek yeniden yapılandırma | 1.5-2 hafta | Sunucuya taşınabilir, hafızalı, akış yapan ajan |
 | 2 | API katmanı | 1.5 hafta | HTTP üzerinden koşu başlatıp canlı izleyebilme |
 | 3 | Web MVP | 2-3 hafta | Tarayıcıdan roman yazdırıp okuyabilme |
 | 4 | UX derinliği | 2 hafta | Editör, müdahale, sürümler, dışa aktarma |
@@ -52,7 +52,10 @@ sırasında "bu davranış eskiden doğru muydu?" sorusunu ortadan kaldırır.
 
 ---
 
-## Faz 1 — Çekirdek yeniden yapılandırma (1.5-2 hafta)
+## Faz 1 — Çekirdek yeniden yapılandırma ✅ TAMAMLANDI
+
+> **Durum:** Tamamlandı. Uygulama notları ve doğrulama:
+> [FAZ-1-TAMAMLANDI.md](FAZ-1-TAMAMLANDI.md). 144 test, %93 kapsam.
 
 **Amaç:** Ajanı sunucuya taşınabilir, hafızalı ve akış yapan hale getirmek. Bu faz ürünün
 gerçek kalite sıçraması: **ajan artık yazdığını okuyabilir.**

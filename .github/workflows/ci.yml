@@ -28,4 +28,4 @@ jobs:
         run: ruff check .
 
       - name: Test
-        run: pytest --cov=tools --cov=utils --cov-report=term-missing
+        run: pytest --cov=core --cov=cli --cov-report=term-missing --cov-fail-under=85
